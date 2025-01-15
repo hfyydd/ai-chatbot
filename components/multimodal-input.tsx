@@ -23,7 +23,7 @@ import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 
 import { sanitizeUIMessages } from '@/lib/utils';
 
-import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons';
+import { ArrowUpIcon, PaperclipIcon, StopIcon, MicrophoneIcon } from './icons';
 import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
@@ -262,11 +262,20 @@ function PureMultimodalInput({
         {isLoading ? (
           <StopButton stop={stop} setMessages={setMessages} />
         ) : (
-          <SendButton
-            input={input}
-            submitForm={submitForm}
-            uploadQueue={uploadQueue}
-          />
+          <>
+            <MicrophoneButton 
+              onClick={() => {
+                // TODO: 实现语音识别逻辑
+                console.log('Microphone clicked');
+              }}
+              isListening={false}
+            />
+            <SendButton
+              input={input}
+              submitForm={submitForm}
+              uploadQueue={uploadQueue}
+            />
+          </>
         )}
       </div>
     </div>
@@ -360,3 +369,27 @@ const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
   if (prevProps.input !== nextProps.input) return false;
   return true;
 });
+
+function PureMicrophoneButton({
+  onClick,
+  isListening,
+}: {
+  onClick: () => void;
+  isListening: boolean;
+}) {
+  return (
+    <Button
+      className={`rounded-full p-1.5 h-fit border dark:border-zinc-600 mr-2 bg-muted hover:bg-zinc-100 dark:hover:bg-zinc-700 ${
+        isListening ? 'bg-red-500 hover:bg-red-600' : ''
+      }`}
+      onClick={(event) => {
+        event.preventDefault();
+        onClick();
+      }}
+    >
+      <MicrophoneIcon size={14} className="text-black dark:text-white" />
+    </Button>
+  );
+}
+
+const MicrophoneButton = memo(PureMicrophoneButton);

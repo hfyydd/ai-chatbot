@@ -5,6 +5,8 @@ export interface Model {
   label: string;
   apiIdentifier: string;
   description: string;
+  baseUrl?: string;
+  apiKey?: string;
 }
 
 export const models: Array<Model> = [
@@ -20,6 +22,14 @@ export const models: Array<Model> = [
     apiIdentifier: 'gpt-4o',
     description: 'For complex, multi-step tasks',
   },
+  {
+    id: 'DeepSeek Chat',
+    label: 'DeepSeek Chat',
+    apiIdentifier: 'deepseek-chat',
+    baseUrl: 'https://api.deepseek.com',
+    apiKey: process.env.DEEPSEEK_API_KEY,
+    description: 'Chinese model for fast',
+  },
 ] as const;
 
-export const DEFAULT_MODEL_NAME: string = 'gpt-4o-mini';
+export const DEFAULT_MODEL_NAME: string = 'deepseek-chat';
