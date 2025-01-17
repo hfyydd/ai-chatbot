@@ -36,3 +36,13 @@ yarn-error.log*
 .vercel
 .vscode
 .env*.local
+
+# Sherpa ASR models
+*.onnx
+sherpa-models/
+sherpa_models/
+models/*.onnx
+models/sherpa/
+tokens.txt
+**/sherpa_models/
+**/sherpa-models/
