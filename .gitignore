@@ -46,3 +46,11 @@ models/sherpa/
 tokens.txt
 **/sherpa_models/
 **/sherpa-models/
+asr-app/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/export-onnx.py
+asr-app/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/LICENSE
+asr-app/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/README.md
+asr-app/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/test_wavs/en.wav
+asr-app/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/test_wavs/ja.wav
+asr-app/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/test_wavs/ko.wav
+asr-app/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/test_wavs/yue.wav
+asr-app/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/test_wavs/zh.wav
