@@ -2,7 +2,7 @@
 
 import type { Attachment, Message } from 'ai';
 import { useChat } from 'ai/react';
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 
 import { ChatHeader } from '@/components/chat-header';
@@ -14,6 +14,8 @@ import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
 import { VisibilityType } from './visibility-selector';
 import { useBlockSelector } from '@/hooks/use-block';
+import { useRecording } from '@/hooks/use-recording';
+import { AudioRecorder } from '@/components/audio-recorder';
 
 export function Chat({
   id,
@@ -29,6 +31,12 @@ export function Chat({
   isReadonly: boolean;
 }) {
   const { mutate } = useSWRConfig();
+  const [attachments, setAttachments] = useState<Array<Attachment>>([]);
+  const { isRecording, handleStartRecording, handleStopRecording } = useRecording();
+
+  useEffect(() => {
+    console.log('Chat component recording state:', { isRecording });
+  }, [isRecording]);
 
   const {
     messages,
@@ -55,7 +63,6 @@ export function Chat({
     fetcher,
   );
 
-  const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isBlockVisible = useBlockSelector((state) => state.isVisible);
 
   return (
@@ -81,19 +88,35 @@ export function Chat({
 
         <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
           {!isReadonly && (
-            <MultimodalInput
-              chatId={id}
-              input={input}
-              setInput={setInput}
-              handleSubmit={handleSubmit}
-              isLoading={isLoading}
-              stop={stop}
-              attachments={attachments}
-              setAttachments={setAttachments}
-              messages={messages}
-              setMessages={setMessages}
-              append={append}
-            />
+            <>
+              {isRecording ? (
+                <div className="w-full bg-white dark:bg-zinc-900 p-4 rounded-lg">
+                  <AudioRecorder
+                    onStartRecording={handleStartRecording}
+                    onStopRecording={handleStopRecording}
+                    append={append}
+                    setInput={setInput}
+                    handleSubmit={handleSubmit}
+                  />
+                </div>
+              ) : (
+                <MultimodalInput
+                  chatId={id}
+                  input={input}
+                  setInput={setInput}
+                  handleSubmit={handleSubmit}
+                  isLoading={isLoading}
+                  stop={stop}
+                  attachments={attachments}
+                  setAttachments={setAttachments}
+                  messages={messages}
+                  setMessages={setMessages}
+                  append={append}
+                  isRecording={isRecording}
+                  onStartRecording={handleStartRecording}
+                />
+              )}
+            </>
           )}
         </form>
       </div>
@@ -113,6 +136,9 @@ export function Chat({
         reload={reload}
         votes={votes}
         isReadonly={isReadonly}
+        isRecording={isRecording}
+        onStartRecording={handleStartRecording}
+        handleStopRecording={handleStopRecording}
       />
     </>
   );

@@ -34,6 +34,7 @@ import { Console } from './console';
 import { useSidebar } from './ui/sidebar';
 import { useBlock } from '@/hooks/use-block';
 import equal from 'fast-deep-equal';
+import { AudioRecorder } from './audio-recorder';
 
 export type BlockKind = 'text' | 'code';
 
@@ -78,6 +79,9 @@ function PureBlock({
   reload,
   votes,
   isReadonly,
+  isRecording,
+  onStartRecording,
+  handleStopRecording,
 }: {
   chatId: string;
   input: string;
@@ -103,6 +107,9 @@ function PureBlock({
     chatRequestOptions?: ChatRequestOptions,
   ) => Promise<string | null | undefined>;
   isReadonly: boolean;
+  isRecording?: boolean;
+  onStartRecording?: () => void;
+  handleStopRecording?: (attachment: Attachment) => void;
 }) {
   const { block, setBlock } = useBlock();
 
@@ -135,6 +142,24 @@ function PureBlock({
   );
 
   const { open: isSidebarOpen } = useSidebar();
+
+  const handleStartRecording = useCallback((event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+    }
+    if (onStartRecording) {
+      onStartRecording();
+    }
+  }, [onStartRecording]);
+
+  
+
+
+
+  useEffect(() => {
+    console.log('Block component recording state:', { isRecording });
+  }, [isRecording]);
+
 
   useEffect(() => {
     if (documents && documents.length > 0) {
@@ -267,15 +292,11 @@ function PureBlock({
   const { width: windowWidth, height: windowHeight } = useWindowSize();
   const isMobile = windowWidth ? windowWidth < 768 : false;
 
+
   return (
     <AnimatePresence>
       {block.isVisible && (
-        <motion.div
-          className="flex flex-row h-dvh w-dvw fixed top-0 left-0 z-50 bg-transparent"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { delay: 0.4 } }}
-        >
+        <motion.div className="flex flex-row h-dvh w-dvw fixed top-0 left-0 z-50 bg-transparent">
           {!isMobile && (
             <motion.div
               className="fixed bg-background h-dvh"
@@ -337,20 +358,34 @@ function PureBlock({
                 />
 
                 <form className="flex flex-row gap-2 relative items-end w-full px-4 pb-4">
-                  <MultimodalInput
-                    chatId={chatId}
-                    input={input}
-                    setInput={setInput}
-                    handleSubmit={handleSubmit}
-                    isLoading={isLoading}
-                    stop={stop}
-                    attachments={attachments}
-                    setAttachments={setAttachments}
-                    messages={messages}
-                    append={append}
-                    className="bg-background dark:bg-muted"
-                    setMessages={setMessages}
-                  />
+                  {isRecording ? (
+                    <div className="w-full bg-white dark:bg-zinc-900 p-4 rounded-lg">
+                      <AudioRecorder
+                        onStartRecording={handleStartRecording}
+                        onStopRecording={handleStopRecording ?? (() => {})}
+                        append={append}
+                        setInput={setInput}
+                        handleSubmit={handleSubmit}
+                      />
+                    </div>
+                  ) : (
+                    <MultimodalInput
+                      chatId={chatId}
+                      input={input}
+                      setInput={setInput}
+                      handleSubmit={handleSubmit}
+                      isLoading={isLoading}
+                      stop={stop}
+                      attachments={attachments}
+                      setAttachments={setAttachments}
+                      messages={messages}
+                      append={append}
+                      setMessages={setMessages}
+                      className="bg-background dark:bg-muted"
+                      isRecording={isRecording}
+                      onStartRecording={handleStartRecording}
+                    />
+                  )}
                 </form>
               </div>
             </motion.div>
@@ -561,7 +596,16 @@ export const Block = memo(PureBlock, (prevProps, nextProps) => {
   if (prevProps.isLoading !== nextProps.isLoading) return false;
   if (!equal(prevProps.votes, nextProps.votes)) return false;
   if (prevProps.input !== nextProps.input) return false;
-  if (!equal(prevProps.messages, nextProps.messages.length)) return false;
-
+  if (!equal(prevProps.messages, nextProps.messages)) return false;
+  if (!equal(prevProps.attachments, nextProps.attachments)) return false;
+  if (prevProps.setInput !== nextProps.setInput) return false;
+  if (prevProps.handleSubmit !== nextProps.handleSubmit) return false;
+  if (prevProps.stop !== nextProps.stop) return false;
+  if (prevProps.setAttachments !== nextProps.setAttachments) return false;
+  if (prevProps.setMessages !== nextProps.setMessages) return false;
+  if (prevProps.append !== nextProps.append) return false;
+  if (prevProps.reload !== nextProps.reload) return false;
+  if (prevProps.isReadonly !== nextProps.isReadonly) return false;
+  if (prevProps.isRecording !== nextProps.isRecording) return false;
   return true;
 });

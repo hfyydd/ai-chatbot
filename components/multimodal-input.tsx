@@ -23,27 +23,21 @@ import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 
 import { sanitizeUIMessages } from '@/lib/utils';
 
-import { ArrowUpIcon, PaperclipIcon, StopIcon, MicrophoneIcon } from './icons';
+import {
+  ArrowUp as ArrowUpIcon,
+  PaperclipIcon,
+  Square as StopIcon,
+  Mic as MicrophoneIcon,
+  X as XIcon,
+  Check as CheckIcon,
+} from 'lucide-react';
 import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { SuggestedActions } from './suggested-actions';
 import equal from 'fast-deep-equal';
 
-function PureMultimodalInput({
-  chatId,
-  input,
-  setInput,
-  isLoading,
-  stop,
-  attachments,
-  setAttachments,
-  messages,
-  setMessages,
-  append,
-  handleSubmit,
-  className,
-}: {
+interface MultimodalInputProps {
   chatId: string;
   input: string;
   setInput: (value: string) => void;
@@ -64,30 +58,40 @@ function PureMultimodalInput({
     chatRequestOptions?: ChatRequestOptions,
   ) => void;
   className?: string;
-}) {
+  isRecording?: boolean;
+  onStartRecording?: () => void;
+}
+
+function PureMultimodalInput({
+  chatId,
+  input,
+  setInput,
+  isLoading,
+  stop,
+  attachments,
+  setAttachments,
+  messages,
+  setMessages,
+  append,
+  handleSubmit,
+  className,
+  isRecording = false,
+  onStartRecording,
+}: MultimodalInputProps) {
+
+
+  const handleRecordingClick = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    console.log('Recording button clicked');
+    if (onStartRecording) {
+      onStartRecording();
+    }
+  }, [onStartRecording]);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
-
-  useEffect(() => {
-    if (textareaRef.current) {
-      adjustHeight();
-    }
-  }, []);
-
-  const adjustHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
-    }
-  };
-
-  const resetHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = '98px';
-    }
-  };
-
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
   const [localStorageInput, setLocalStorageInput] = useLocalStorage(
     'input',
     '',
@@ -96,13 +100,10 @@ function PureMultimodalInput({
   useEffect(() => {
     if (textareaRef.current) {
       const domValue = textareaRef.current.value;
-      // Prefer DOM value over localStorage to handle hydration
       const finalValue = domValue || localStorageInput || '';
       setInput(finalValue);
       adjustHeight();
     }
-    // Only run once after hydration
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -113,9 +114,6 @@ function PureMultimodalInput({
     setInput(event.target.value);
     adjustHeight();
   };
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
 
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
@@ -193,6 +191,21 @@ function PureMultimodalInput({
     [setAttachments],
   );
 
+  const adjustHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
+    }
+  };
+
+  const resetHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = '98px';
+    }
+  };
+
+
   return (
     <div className="relative w-full flex flex-col gap-4">
       {messages.length === 0 &&
@@ -230,68 +243,77 @@ function PureMultimodalInput({
         </div>
       )}
 
-      <Textarea
-        ref={textareaRef}
-        placeholder="Send a message..."
-        value={input}
-        onChange={handleInput}
-        className={cx(
-          'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base bg-muted pb-10 dark:border-zinc-700',
-          className,
-        )}
-        rows={2}
-        autoFocus
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
+      <div className="relative flex items-end w-full">
+        <Textarea
+          ref={textareaRef}
+          placeholder="Send a message..."
+          value={input}
+          onChange={handleInput}
+          className={cx(
+            'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base bg-muted pb-10 dark:border-zinc-700',
+            className,
+          )}
+          rows={2}
+          autoFocus
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
 
-            if (isLoading) {
-              toast.error('Please wait for the model to finish its response!');
-            } else {
-              submitForm();
+              if (isLoading) {
+                toast.error('Please wait for the model to finish its response!');
+              } else {
+                submitForm();
+              }
             }
-          }
-        }}
-      />
+          }}
+        />
 
-      <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start">
-        <AttachmentsButton fileInputRef={fileInputRef} isLoading={isLoading} />
-      </div>
+        <div className="absolute right-2 bottom-2 flex gap-2">
+          <PureAttachmentsButton
+            fileInputRef={fileInputRef}
+            isLoading={isLoading}
+          />
 
-      <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
-        {isLoading ? (
-          <StopButton stop={stop} setMessages={setMessages} />
-        ) : (
-          <>
-            <MicrophoneButton 
-              onClick={() => {
-                // TODO: 实现语音识别逻辑
-                console.log('Microphone clicked');
-              }}
-              isListening={false}
-            />
-            <SendButton
-              input={input}
-              submitForm={submitForm}
-              uploadQueue={uploadQueue}
-            />
-          </>
-        )}
+          {isLoading ? (
+            <PureStopButton stop={stop} setMessages={setMessages} />
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRecordingClick}
+                className="size-8 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                disabled={isLoading}
+              >
+                <MicrophoneIcon className="size-4" />
+              </Button>
+              <PureSendButton
+                submitForm={submitForm}
+                input={input}
+                uploadQueue={uploadQueue}
+              />
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-export const MultimodalInput = memo(
-  PureMultimodalInput,
-  (prevProps, nextProps) => {
-    if (prevProps.input !== nextProps.input) return false;
-    if (prevProps.isLoading !== nextProps.isLoading) return false;
-    if (!equal(prevProps.attachments, nextProps.attachments)) return false;
-
-    return true;
-  },
-);
+export const MultimodalInput = memo(PureMultimodalInput, (prevProps, nextProps) => {
+  if (prevProps.input !== nextProps.input) return false;
+  if (prevProps.isLoading !== nextProps.isLoading) return false;
+  if (!equal(prevProps.attachments, nextProps.attachments)) return false;
+  if (prevProps.isRecording !== nextProps.isRecording) return false;
+  if (prevProps.chatId !== nextProps.chatId) return false;
+  if (prevProps.handleSubmit !== nextProps.handleSubmit) return false;
+  if (prevProps.stop !== nextProps.stop) return false;
+  if (prevProps.setInput !== nextProps.setInput) return false;
+  if (prevProps.setAttachments !== nextProps.setAttachments) return false;
+  if (prevProps.setMessages !== nextProps.setMessages) return false;
+  if (prevProps.append !== nextProps.append) return false;
+  return true;
+});
 
 function PureAttachmentsButton({
   fileInputRef,
@@ -369,27 +391,3 @@ const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
   if (prevProps.input !== nextProps.input) return false;
   return true;
 });
-
-function PureMicrophoneButton({
-  onClick,
-  isListening,
-}: {
-  onClick: () => void;
-  isListening: boolean;
-}) {
-  return (
-    <Button
-      className={`rounded-full p-1.5 h-fit border dark:border-zinc-600 mr-2 bg-muted hover:bg-zinc-100 dark:hover:bg-zinc-700 ${
-        isListening ? 'bg-red-500 hover:bg-red-600' : ''
-      }`}
-      onClick={(event) => {
-        event.preventDefault();
-        onClick();
-      }}
-    >
-      <MicrophoneIcon size={14} className="text-black dark:text-white" />
-    </Button>
-  );
-}
-
-const MicrophoneButton = memo(PureMicrophoneButton);
