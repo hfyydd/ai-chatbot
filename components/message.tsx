@@ -19,7 +19,7 @@ import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
-
+import { Plotly } from './plotly';
 const PurePreviewMessage = ({
   chatId,
   message,
@@ -153,6 +153,8 @@ const PurePreviewMessage = ({
                             result={result}
                             isReadonly={isReadonly}
                           />
+                        ) : toolName === 'generatePlot' ? (
+                          <Plotly figData={JSON.parse(result.plot)} />
                         ) : (
                           <pre>{JSON.stringify(result, null, 2)}</pre>
                         )}
@@ -182,6 +184,8 @@ const PurePreviewMessage = ({
                           args={args}
                           isReadonly={isReadonly}
                         />
+                      ) : toolName === 'generatePlot' ? (
+                        <Plotly figData={args.id} />
                       ) : null}
                     </div>
                   );

@@ -5,7 +5,20 @@ from openai import OpenAI
 from vanna.base import VannaBase
 
 class DeepSeek(VannaBase):
-    def __init__(self, api_key: str):
+    def __init__(self, config=None):
+        if config is None:
+            raise ValueError(
+                "For DeepSeek, config must be provided with an api_key and model"
+            )
+        if "api_key" not in config:
+            raise ValueError("config must contain a DeepSeek api_key")
+
+        if "model" not in config:
+            raise ValueError("config must contain a Mistral model")
+    
+        api_key = config["api_key"]
+        model = config["model"]
+        self.model = model
         self.client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1")
         
     def system_message(self, message: str) -> any:
@@ -28,7 +41,7 @@ class DeepSeek(VannaBase):
 
     def submit_prompt(self, prompt, **kwargs) -> str:
         chat_response = self.client.chat.completions.create(
-            model="deepseek-chat",
+            model=self.model,
             messages=prompt,
         )
         

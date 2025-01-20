@@ -12,19 +12,20 @@ app = Flask(__name__)
 # SETUP
 cache = MemoryCache()
 
+from deepseek.deepseek import DeepSeek # type: ignore
+
 # from vanna.local import LocalContext_OpenAI
 # vn = LocalContext_OpenAI()
+from vanna.chromadb import ChromaDB_VectorStore
 
-from vanna.remote import VannaDefault
-vn = VannaDefault(model='knowmyself', api_key='083705c2531544c298d2a56aad34ee01')
+class DeepSeekVanna(ChromaDB_VectorStore, DeepSeek):
+    def __init__(self, config=None):
+        ChromaDB_VectorStore.__init__(self, config=config)
+        DeepSeek.__init__(self, config=config)
 
-vn.connect_to_snowflake(
-    account=os.environ['SNOWFLAKE_ACCOUNT'],
-    username=os.environ['SNOWFLAKE_USERNAME'],
-    password=os.environ['SNOWFLAKE_PASSWORD'],
-    database=os.environ['SNOWFLAKE_DATABASE'],
-    warehouse=os.environ['SNOWFLAKE_WAREHOUSE'],
-)
+vn = DeepSeekVanna(config={"api_key": "sk-22e5b7ed8a3a47bd82215065318b075d", "model": "deepseek-chat"})
+vn.connect_to_sqlite("database.db")
+
 
 # NO NEED TO CHANGE ANYTHING BELOW THIS LINE
 def requires_cache(fields):
@@ -206,4 +207,10 @@ def get_question_history():
     return jsonify({"type": "question_history", "questions": cache.get_all(field_list=['question']) })
 
 if __name__ == '__main__':
+    vn.train(ddl='''CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE
+    );''')
+    # vn.ask("What is the weather in Tokyo?")
     app.run(debug=True, host='0.0.0.0', port=3003)

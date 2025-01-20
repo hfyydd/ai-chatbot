@@ -39,7 +39,11 @@ type AllowedTools =
   | 'createDocument'
   | 'updateDocument'
   | 'requestSuggestions'
-  | 'getWeather';
+  | 'getWeather'
+  | 'generateSql'
+  | 'runSql'
+  | 'generatePlot'
+  // | 'generateFollowupQuestions';
 
 const blocksTools: AllowedTools[] = [
   'createDocument',
@@ -49,7 +53,72 @@ const blocksTools: AllowedTools[] = [
 
 const weatherTools: AllowedTools[] = ['getWeather'];
 
-const allTools: AllowedTools[] = [...blocksTools, ...weatherTools];
+const sqlTools: AllowedTools[] = ['generateSql', 'runSql', 'generatePlot'];
+
+const allTools: AllowedTools[] = [...weatherTools, ...sqlTools];
+
+interface SqlResponse {
+  type: string;
+  id: string;
+  text: string;
+}
+
+async function generateSql(question: string): Promise<SqlResponse> {
+  const response = await fetch(
+    `http://localhost:3003/api/v0/generate_sql?question=${encodeURIComponent(question)}`
+  );
+  const data = await response.json();
+  
+  if (data.type === 'error') {
+    throw new Error(data.error);
+  }
+  
+  return data;
+}
+
+async function runSql(id: string, sql: string): Promise<any> {
+  const response = await fetch(
+    `http://localhost:3003/api/v0/run_sql?id=${id}&sql=${encodeURIComponent(sql)}`
+  );
+  const data = await response.json();
+  
+  if (data.type === 'error') {
+    throw new Error(data.error);
+  }
+  
+  return JSON.parse(data.df);
+}
+
+async function generatePlot(id: string): Promise<string> {
+  const response = await fetch(
+    `http://localhost:3003/api/v0/generate_plotly_figure?id=${id}`
+  );
+  const data = await response.json();
+  
+  if (data.type === 'error') {
+    throw new Error(data.error);
+  }
+  
+  return data.fig;
+}
+
+// not used
+async function generateFollowupQuestions(question: string, sql: string, df: any): Promise<string[]> {
+  const response = await fetch(
+    `http://localhost:3003/api/v0/generate_followup_questions?question=${encodeURIComponent(question)}&sql=${encodeURIComponent(sql)}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ df })
+    }
+  );
+  const data = await response.json();
+  
+  if (data.type === 'error') {
+    throw new Error(data.error);
+  }
+  
+  return data.questions;
+}
 
 export async function POST(request: Request) {
   const {
@@ -408,6 +477,49 @@ export async function POST(request: Request) {
               };
             },
           },
+          generateSql: {
+            description: 'Generate SQL for a given question',
+            parameters: z.object({
+              question: z.string().describe('The question to generate SQL for'),
+            }),
+            execute: async ({ question }) => {
+              const response = await generateSql(question);
+              return { sql: response.text, id: response.id };
+            },
+          },
+          runSql: {
+            description: 'Run the generated SQL query and get results',
+            parameters: z.object({
+              id: z.string().describe('The query ID'),
+              sql: z.string().describe('The SQL query to execute'),
+            }),
+            execute: async ({ id, sql }) => {
+              const results = await runSql(id, sql);
+              return { results };
+            },
+          },
+          generatePlot: {
+            description: 'Generate a plot based on the SQL query results with the query ID,after runSql',
+            parameters: z.object({
+              id: z.string().describe('The query ID'),
+            }),
+            execute: async ({ id }) => {
+              const plotlyJson = await generatePlot(id);
+              return { plot: plotlyJson };
+            },
+          },
+          // generateFollowupQuestions: {
+          //   description: 'Generate follow-up questions based on the current query and results',
+          //   parameters: z.object({
+          //     question: z.string().describe('The original question'),
+          //     sql: z.string().describe('The SQL query used'),
+          //     data: z.any().describe('The query results'),
+          //   }),
+          //   execute: async ({ question, sql, data }) => {
+          //     const questions = await generateFollowupQuestions(question, sql, data);
+          //     return { questions };
+          //   },
+          // },
         },
         onFinish: async ({ response }) => {
           if (session.user?.id) {
