@@ -3,7 +3,7 @@
 import type { ChatRequestOptions, Message } from 'ai';
 import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 import type { Vote } from '@/lib/db/schema';
 
@@ -43,6 +43,7 @@ const PurePreviewMessage = ({
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
+  
   return (
     <AnimatePresence>
       <motion.div
@@ -128,6 +129,7 @@ const PurePreviewMessage = ({
               <div className="flex flex-col gap-4">
                 {message.toolInvocations.map((toolInvocation) => {
                   const { toolName, toolCallId, state, args } = toolInvocation;
+                  console.log('toolInvocation', toolInvocation);
 
                   if (state === 'result') {
                     const { result } = toolInvocation;
@@ -184,8 +186,6 @@ const PurePreviewMessage = ({
                           args={args}
                           isReadonly={isReadonly}
                         />
-                      ) : toolName === 'generatePlot' ? (
-                        <Plotly figData={args.id} />
                       ) : null}
                     </div>
                   );

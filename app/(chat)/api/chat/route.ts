@@ -499,7 +499,7 @@ export async function POST(request: Request) {
             },
           },
           generatePlot: {
-            description: 'Generate a plot based on the SQL query results with the query ID,after runSql',
+            description: 'Generate a plot based on the SQL query results with the query ID,after runSql tool called',
             parameters: z.object({
               id: z.string().describe('The query ID'),
             }),
