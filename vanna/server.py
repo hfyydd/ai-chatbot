@@ -1,5 +1,9 @@
 from dotenv import load_dotenv
-load_dotenv()
+import os
+from pathlib import Path
+
+env_path = Path(__file__).parent.parent / '.env.local'
+load_dotenv(dotenv_path=env_path)
 
 from functools import wraps
 from flask import Flask, jsonify, Response, request, redirect, url_for
@@ -22,8 +26,9 @@ class DeepSeekVanna(ChromaDB_VectorStore, DeepSeek):
     def __init__(self, config=None):
         ChromaDB_VectorStore.__init__(self, config=config)
         DeepSeek.__init__(self, config=config)
-
-vn = DeepSeekVanna(config={"api_key": "sk-22e5b7ed8a3a47bd82215065318b075d", "model": "deepseek-chat"})
+api_key = os.getenv("DEEPSEEK_API_KEY")
+print("API KEY", api_key)
+vn = DeepSeekVanna(config={"api_key": api_key, "model": "deepseek-chat"})
 vn.connect_to_sqlite("database.db")
 
 

@@ -157,6 +157,8 @@ const PurePreviewMessage = ({
                           />
                         ) : toolName === 'generatePlot' ? (
                           <Plotly figData={JSON.parse(result.plot)} />
+                        ) : toolName === 'generateSql' ? (
+                          <div>{result}</div>
                         ) : (
                           <pre>{JSON.stringify(result, null, 2)}</pre>
                         )}
