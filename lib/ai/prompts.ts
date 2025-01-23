@@ -42,7 +42,7 @@ export const plotPrompt = `你是一个数据分析助手。当用户询问数�
 
 请记住在查询数据后，主动考虑是否需要可视化展示。`;
 
-export const systemPrompt = `${regularPrompt}\n\n${plotPrompt}`;
+export const systemPrompt = `${regularPrompt}\n\n`;
 
 export const codePrompt = `
 You are a Python code generator that creates self-contained, executable code snippets. When writing code:

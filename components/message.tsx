@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import { Plotly } from './plotly';
+import { Think } from './think';
 const PurePreviewMessage = ({
   chatId,
   message,
@@ -42,6 +43,8 @@ const PurePreviewMessage = ({
   isReadonly: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+
+  console.log("message", message);
 
   
   return (
@@ -106,7 +109,7 @@ const PurePreviewMessage = ({
                       message.role === 'user',
                   })}
                 >
-                  <Markdown>{message.content as string}</Markdown>
+                  <Think result={message.content as string} />
                 </div>
               </div>
             )}
@@ -129,7 +132,7 @@ const PurePreviewMessage = ({
               <div className="flex flex-col gap-4">
                 {message.toolInvocations.map((toolInvocation) => {
                   const { toolName, toolCallId, state, args } = toolInvocation;
-                  console.log('toolInvocation', toolInvocation);
+
 
                   if (state === 'result') {
                     const { result } = toolInvocation;
@@ -158,9 +161,16 @@ const PurePreviewMessage = ({
                         ) : toolName === 'generatePlot' ? (
                           <Plotly figData={JSON.parse(result.plot)} />
                         ) : toolName === 'generateSql' ? (
-                          <div>{result}</div>
+                          <Markdown>{`生成的SQL语句：\n\`\`\`sql\n${result.sql}\n\`\`\``}</Markdown>
+                        ) : toolName === 'runSql' ? (
+                          <Markdown>{
+                            Array.isArray(result.results) && result.results.length > 0 
+                              ? `查询结果：\n\`\`\`json\n${JSON.stringify(result.results, null, 2)}\n\`\`\`\n\n`
+                              : '查询结果为空'
+                          }</Markdown>
                         ) : (
                           <pre>{JSON.stringify(result, null, 2)}</pre>
+
                         )}
                       </div>
                     );
